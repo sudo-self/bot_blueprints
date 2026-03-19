@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 
 export const metadata: Metadata = {
-  title: 'TeleForge Bot Builder',
+  title: 'bot-blueprints',
   description: 'A professional tool for building and simulating Telegram bots.',
   manifest: '/manifest.json',
   icons: {
