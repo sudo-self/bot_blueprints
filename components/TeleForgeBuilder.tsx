@@ -13,14 +13,14 @@ export default function TeleForgeBuilder() {
   const [newCmd, setNewCmd] = useState({ name: '', cmd: '', out: '' });
   const [config, setConfig] = useState({
     token: '*******',
-    adminId: '123456789',
-    botName: 'RemoteAdmin',
-    botUsername: '@remote_admin_bot',
-    botBio: 'Secure shell access & file manager',
+    adminId: '7251722622',
+    botName: 'BlueprintBot',
+    botUsername: '@blueprint_bot',
+    botBio: 'Secure remote shell access',
     botPicUrl: '',
     startPicUrl: '',
     connectionType: 'polling', // 'polling' or 'webhook'
-    welcomeMsg: '👋 Bot started! Type /help to see available commands.',
+    welcomeMsg: '👋 Bot started! Type /help',
     features: {
       fileUpload: true,
       longOutput: true,
@@ -28,6 +28,8 @@ export default function TeleForgeBuilder() {
       logging: true,
     },
     commands: [
+      { name: 'whoami', cmd: 'echo midnight', out: 'midnight' },
+      { name: 'figlet', cmd: 'figlet blueprint_bot', out: ' _     _                       _       _   _ \n| |__ | |_   _  ___ _ __  _ __(_)_ __ | |_| |__   ___ | |_ \n| \'_ \\| | | | |/ _ \\ \'_ \\| \'__| | \'_ \\| __| \'_ \\ / _ \\| __|\n| |_) | | |_| |  __/ |_) | |  | | | | | |_| |_) | (_) | |_ \n|_.__/|_|\\__,_|\\___| .__/|_|  |_|_| |_|\\__|_.__/ \\___/ \\__|\n                   |_|                                     ' },
       { name: 'status', cmd: 'uptime -p', out: 'up 2 hours, 14 minutes' },
       { name: 'disk', cmd: 'df -h /', out: 'Filesystem Size Used Avail Use%\n/dev/sda1 98G 45G 48G 49% /' },
     ]
@@ -47,19 +49,23 @@ export default function TeleForgeBuilder() {
 import telebot
 import os
 import subprocess
+import logging
 
 # Configuration
 API_TOKEN = "${apiToken}"
 ADMIN_ID = ${adminId}
 
+# Logging setup
+logging.basicConfig(level=logging.INFO)
+
 bot = telebot.TeleBot(API_TOKEN)
+
+def is_admin(message):
+    return message.from_user.id == ADMIN_ID
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # Security check: Only the admin can use this bot
-    if message.from_user.id != ADMIN_ID:
-        bot.reply_to(message, "🚫 Unauthorized access.")
-        return
+    if not is_admin(message): return
 `;
 
     if (config.startPicUrl) {
@@ -71,7 +77,7 @@ def send_welcome(message):
     if (config.features.fileUpload) {
       code += `@bot.message_handler(content_types=['document'])
 def handle_docs(message):
-    if message.from_user.id != ADMIN_ID: return
+    if not is_admin(message): return
     try:
         file_info = bot.get_file(message.document.file_id)
         downloaded_file = bot.download_file(file_info.file_path)
@@ -85,7 +91,7 @@ def handle_docs(message):
     config.commands.forEach(cmd => {
       code += `@bot.message_handler(commands=['${cmd.name}'])
 def handle_${cmd.name}(message):
-    if message.from_user.id != ADMIN_ID: return
+    if not is_admin(message): return
     try:
         # Executing shell command: ${cmd.cmd}
         result = subprocess.check_output("${cmd.cmd}", shell=True, stderr=subprocess.STDOUT, text=True)
@@ -100,12 +106,18 @@ def handle_${cmd.name}(message):
                 bot.send_document(message.chat.id, f, caption="Output too long, sent as file.")
             os.remove(filename)
         else:
-            bot.reply_to(message, f"\`\`\`\\n{result}\\n\`\`\`", parse_mode='Markdown')
+            bot.reply_to(message, f"<pre>{result}</pre>", parse_mode='HTML')
     except Exception as e:
-        bot.reply_to(message, f"❌ Error executing /${cmd.name}:\\n\`\`\`\\n{str(e)}\\n\`\`\`", parse_mode='Markdown')
+        bot.reply_to(message, f"❌ Error executing /${cmd.name}:\\n<pre>{str(e)}</pre>", parse_mode='HTML')
 
 `;
     });
+
+    code += `@bot.message_handler(func=lambda m: True)
+def fallback(message):
+    bot.reply_to(message, "❓ Unknown command. Type /help")
+
+`;
 
     if (config.connectionType === 'webhook') {
       code += `
@@ -133,7 +145,7 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     print("Bot is starting (Polling mode)...")
     # infinity_polling keeps the bot running even if network errors occur
-    bot.infinity_polling()
+    bot.infinity_polling(skip_pending=True)
 `;
     }
     return code;
@@ -242,13 +254,17 @@ python bot.py
         <span className="token-comment"># use the instructions in settings to launch the bot</span><br/><br/>
         <span className="token-keyword">import</span> telebot<br/>
         <span className="token-keyword">import</span> os<br/>
-        <span className="token-keyword">import</span> subprocess<br/><br/>
+        <span className="token-keyword">import</span> subprocess<br/>
+        <span className="token-keyword">import</span> logging<br/><br/>
         API_TOKEN = <span className="token-string">&quot;{config.token}&quot;</span><br/>
         ADMIN_ID = <span className="token-number">{config.adminId}</span><br/><br/>
+        logging.basicConfig(level=logging.INFO)<br/><br/>
         bot = telebot.TeleBot(API_TOKEN)<br/><br/>
+        <span className="token-keyword">def</span> <span className="token-function">is_admin</span>(message):<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">return</span> message.from_user.id == ADMIN_ID<br/><br/>
         <span className="token-keyword">@bot.message_handler</span>(commands=[<span className="token-string">&apos;start&apos;</span>])<br/>
         <span className="token-keyword">def</span> <span className="token-function">send_welcome</span>(message):<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> message.from_user.id != ADMIN_ID: <span className="token-keyword">return</span><br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-keyword">not</span> is_admin(message): <span className="token-keyword">return</span><br/>
         {config.startPicUrl ? (
           <>
             &nbsp;&nbsp;&nbsp;&nbsp;bot.send_photo(message.chat.id, <span className="token-string">&quot;{config.startPicUrl}&quot;</span>, caption=<span className="token-string">&quot;&quot;&quot;{config.welcomeMsg}&quot;&quot;&quot;</span>)<br/><br/>
@@ -262,30 +278,38 @@ python bot.py
           <>
             <span className="token-keyword">@bot.message_handler</span>(content_types=[<span className="token-string">&apos;document&apos;</span>])<br/>
             <span className="token-keyword">def</span> <span className="token-function">handle_docs</span>(message):<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> message.from_user.id != ADMIN_ID: <span className="token-keyword">return</span><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-keyword">not</span> is_admin(message): <span className="token-keyword">return</span><br/>
             &nbsp;&nbsp;&nbsp;&nbsp;file_info = bot.get_file(message.document.file_id)<br/>
             &nbsp;&nbsp;&nbsp;&nbsp;downloaded_file = bot.download_file(file_info.file_path)<br/>
             &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">with</span> <span className="token-function">open</span>(message.document.file_name, <span className="token-string">&apos;wb&apos;</span>) <span className="token-keyword">as</span> new_file:<br/>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new_file.write(downloaded_file)<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">&quot;✅ File saved successfully!&quot;</span>)<br/><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">f&quot;✅ File &apos;&#123;message.document.file_name&#125;&apos; saved successfully!&quot;</span>)<br/><br/>
           </>
         )}
         {config.commands.map((cmd, i) => (
           <div key={i}>
             <span className="token-keyword">@bot.message_handler</span>(commands=[<span className="token-string">&apos;{cmd.name}&apos;</span>])<br/>
             <span className="token-keyword">def</span> <span className="token-function">handle_{cmd.name}</span>(message):<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> message.from_user.id != ADMIN_ID: <span className="token-keyword">return</span><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-keyword">not</span> is_admin(message): <span className="token-keyword">return</span><br/>
             &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">try</span>:<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-comment"># Executing shell command: {cmd.cmd}</span><br/>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result = subprocess.check_output(<span className="token-string">&quot;{cmd.cmd}&quot;</span>, shell=<span className="token-keyword">True</span>, stderr=subprocess.STDOUT, text=<span className="token-keyword">True</span>)<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-keyword">not</span> result: result = <span className="token-string">&quot;Command executed with no output.&quot;</span><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-keyword">not</span> result: result = <span className="token-string">&quot;Command executed with no output.&quot;</span><br/><br/>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">if</span> <span className="token-function">len</span>(result) &gt; 4000:<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.send_document(message.chat.id, <span className="token-function">open</span>(<span className="token-string">&quot;output.txt&quot;</span>, <span className="token-string">&quot;rb&quot;</span>))<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filename = <span className="token-string">&quot;output_{cmd.name}.txt&quot;</span><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">with</span> <span className="token-function">open</span>(filename, <span className="token-string">&quot;w&quot;</span>) <span className="token-keyword">as</span> f: f.write(result)<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">with</span> <span className="token-function">open</span>(filename, <span className="token-string">&quot;rb&quot;</span>) <span className="token-keyword">as</span> f:<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.send_document(message.chat.id, f, caption=<span className="token-string">&quot;Output too long, sent as file.&quot;</span>)<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;os.remove(filename)<br/>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">else</span>:<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">f&quot;```\n&#123;result&#125;\n```&quot;</span>, parse_mode=<span className="token-string">&apos;Markdown&apos;</span>)<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">f&quot;&lt;pre&gt;&#123;result&#125;&lt;/pre&gt;&quot;</span>, parse_mode=<span className="token-string">&apos;HTML&apos;</span>)<br/>
             &nbsp;&nbsp;&nbsp;&nbsp;<span className="token-keyword">except</span> Exception <span className="token-keyword">as</span> e:<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">f&quot;❌ Error:\n```\n&#123;str(e)&#125;\n```&quot;</span>, parse_mode=<span className="token-string">&apos;Markdown&apos;</span>)<br/><br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">f&quot;❌ Error:\n&lt;pre&gt;&#123;str(e)&#125;&lt;/pre&gt;&quot;</span>, parse_mode=<span className="token-string">&apos;HTML&apos;</span>)<br/><br/>
           </div>
         ))}
+        <span className="token-keyword">@bot.message_handler</span>(func=<span className="token-keyword">lambda</span> m: <span className="token-keyword">True</span>)<br/>
+        <span className="token-keyword">def</span> <span className="token-function">fallback</span>(message):<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;bot.reply_to(message, <span className="token-string">&quot;❓ Unknown command. Type /help&quot;</span>)<br/><br/>
         {config.connectionType === 'webhook' ? (
           <>
             <span className="token-comment"># Webhook setup (simplified)</span><br/>
@@ -297,7 +321,7 @@ python bot.py
         ) : (
           <>
             <span className="token-keyword">if</span> __name__ == <span className="token-string">&quot;__main__&quot;</span>:<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;bot.infinity_polling()
+            &nbsp;&nbsp;&nbsp;&nbsp;bot.infinity_polling(skip_pending=<span className="token-keyword">True</span>)
           </>
         )}
       </div>
