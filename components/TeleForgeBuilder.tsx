@@ -200,7 +200,7 @@ python3 bot.py
     return (
       <div className="font-mono text-[10px] leading-relaxed">
         <span className="token-comment">#!/usr/bin/env python3</span><br/>
-        <span className="token-comment"># use the instructions in settings to launch the bot</span><br/><br/>
+        <span className="token-comment"># sudo-self/bot_blueprints </span><br/><br/>
         <span className="token-keyword">import</span> telebot<br/>
         <span className="token-keyword">import</span> os<br/>
         <span className="token-keyword">import</span> subprocess<br/><br/>
