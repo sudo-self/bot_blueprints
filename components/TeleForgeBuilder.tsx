@@ -88,8 +88,8 @@ def handle_docs(message):
         bot.reply_to(message, f"❌ Upload Error: {str(e)}")\n\n`;
     }
 
-    config.commands.forEach(cmd => {
-      code += `@bot.message_handler(commands=['${cmd.name}'])
+   config.commands.forEach(cmd => {
+  code += `@bot.message_handler(commands=['${cmd.name}'])
 def handle_${cmd.name}(message):
     if not is_admin(message): return
     try:
@@ -111,7 +111,7 @@ def handle_${cmd.name}(message):
         bot.reply_to(message, f"❌ Error executing /${cmd.name}:\\n<pre>{str(e)}</pre>", parse_mode='HTML')
 
 `;
-    });
+});
 
     code += `@bot.message_handler(func=lambda m: True)
 def fallback(message):
