@@ -94,7 +94,7 @@ def handle_${cmd.name}(message):
     if not is_admin(message): return
     try:
         # Executing shell command: ${cmd.cmd}
-        result = subprocess.check_output("${cmd.cmd}", shell=True, stderr=subprocess.STDOUT, text=True)
+        result = subprocess.check_output(${JSON.stringify(cmd.cmd.split(' '))}, stderr=subprocess.STDOUT, text=True)
         if not result: result = "Command executed with no output."
         
         # Handle long output
