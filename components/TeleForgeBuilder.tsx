@@ -10,7 +10,7 @@ import { saveAs } from 'file-saver';
 export default function TeleForgeBuilder() {
   const [activeTab, setActiveTab] = useState('auth');
   const [isAddingCommand, setIsAddingCommand] = useState(false);
-  const [newCmd, setNewCmd] = useState({ name: '', cmd: '' });
+  const [newCmd, setNewCmd] = useState({ name: '', cmd: '', out: '' });
   const [config, setConfig] = useState({
     token: '*******',
     adminId: '123456789',
@@ -479,12 +479,22 @@ python3 bot.py
                     className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs mt-1 focus:outline-none focus:border-indigo-500 text-white"
                   />
                 </div>
+                <div>
+                  <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Simulated Output</label>
+                  <input 
+                    type="text" 
+                    value={newCmd.out}
+                    onChange={(e) => setNewCmd({...newCmd, out: e.target.value})}
+                    placeholder="e.g. System rebooting..."
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs mt-1 focus:outline-none focus:border-indigo-500 text-white"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <button 
                     onClick={() => {
                       if (newCmd.name && newCmd.cmd) {
                         setConfig({...config, commands: [...config.commands, newCmd]});
-                        setNewCmd({ name: '', cmd: '' });
+                        setNewCmd({ name: '', cmd: '', out: '' });
                         setIsAddingCommand(false);
                       }
                     }}
@@ -494,7 +504,7 @@ python3 bot.py
                   </button>
                   <button 
                     onClick={() => {
-                      setNewCmd({ name: '', cmd: '' });
+                      setNewCmd({ name: '', cmd: '', out: '' });
                       setIsAddingCommand(false);
                     }}
                     className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded text-[10px] font-bold uppercase tracking-widest transition-all"
